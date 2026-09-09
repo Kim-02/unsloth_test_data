@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+*.pyc
+unsloth_compiled_cache/
+.~lock.*#
+
+# 실행할 때마다 각자 컴퓨터에서 새로 생성되는 결과물
+# (테스트셋 자체는 제외: images/, selected_30.csv는 추적함)
+construction_vlm_eval30/all_results.csv
+construction_vlm_eval30/base_raw.csv
+construction_vlm_eval30/finetuned_raw.csv
+construction_vlm_eval30/summary.csv
+unsloth_fine_tuning_results.csv
+unsloth_fine_tuning_model_config.csv
