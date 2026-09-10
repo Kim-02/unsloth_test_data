@@ -53,7 +53,7 @@ DATASET_NAME = "HuggingFaceM4/ChartQA"
 DATASET_SPLIT = "test"
 
 # 1차 동작 확인은 30, 최종 평가는 None 권장(전체 test 사용)
-EVAL_LIMIT = 30
+EVAL_LIMIT = None
 EVAL_SEED = 3407
 
 # 이전 평가와 구분하기 위한 태그
