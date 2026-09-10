@@ -11,12 +11,13 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 # Gemma3 Flex Attention + torch.compile 경로의 device/Triton 문제를 피한다.
 os.environ["UNSLOTH_ENABLE_FLEX_ATTENTION"] = "0"
 
+# 평가 안정성을 위해 Unsloth의 torch.compile 최적화도 비활성화한다.\nos.environ["UNSLOTH_COMPILE_DISABLE"] = "1"\n
 from pathlib import Path
 
 import pandas as pd
 import torch
 
-from vlm_eval_lib_server import (
+from vlm_eval_lib_server_eager import (
     resolve_lora_path,
     prune_checkpoints_keep_last,
     load_chartqa_dataset,

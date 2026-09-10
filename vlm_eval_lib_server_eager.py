@@ -473,6 +473,15 @@ def load_model(
             model_name=model_path,
             max_seq_length=max_seq_length,
             load_in_4bit=load_in_4bit,
+
+            # Gemma 3 + Blackwell 환경에서 Flex/Flash Attention이
+            # 각각 Triton shared-memory / fake-tensor storage 오류를
+            # 일으킬 수 있어 평가에서는 안정적인 eager backend를 사용.
+            attn_implementation="eager",
+
+            # CUDA_VISIBLE_DEVICES=0으로 한 장만 보이지만
+            # device placement도 명시적으로 고정한다.
+            device_map={"": 0},
         )
     )
 
