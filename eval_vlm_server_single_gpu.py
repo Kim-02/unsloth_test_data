@@ -1,4 +1,16 @@
 import os
+
+# ============================================================
+# IMPORTANT: Unsloth / PyTorch import 전에 설정해야 함
+# ============================================================
+
+# Gemma 3 12B는 RTX PRO 6000 96GB 한 장에 충분히 올라가므로,
+# 평가 시 multi-GPU auto-sharding을 막아 cuda:0/cuda:1 device mismatch를 방지한다.
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+# Gemma3 Flex Attention + torch.compile 경로의 device/Triton 문제를 피한다.
+os.environ["UNSLOTH_ENABLE_FLEX_ATTENTION"] = "0"
+
 from pathlib import Path
 
 import pandas as pd
