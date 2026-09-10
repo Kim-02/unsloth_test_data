@@ -343,6 +343,65 @@ def load_chartqa_dataset(
 
 
 # ============================================================
+# ChartQA 평가 프롬프트
+# ============================================================
+
+ANSWER_ONLY_INSTRUCTION = (
+    "Answer with only the final answer. "
+    "Do not explain your reasoning, do not show calculation steps, "
+    "and do not restate the question. "
+    "For a numeric answer, return only the numeric value. "
+    "For a text answer, return only the text answer."
+)
+
+
+def build_chartqa_prompt(question):
+    """
+    Base / LoRA / QLoRA 모두 완전히 동일한 answer-only 프롬프트를 사용한다.
+    """
+    question = str(question).strip()
+    return f"{question}\n\n{ANSWER_ONLY_INSTRUCTION}"
+
+
+def clean_prediction_for_scoring(text):
+    """
+    GT를 보지 않고 수행하는 최소한의 형식 정리.
+
+    - 앞뒤 공백 제거
+    - 'Answer:', 'Final answer:' 같은 접두어 제거
+    - 여러 줄을 출력한 경우 첫 번째 비어있지 않은 줄을 평가 대상으로 사용
+
+    숫자를 문장 안에서 임의 추출하지는 않는다.
+    따라서 Base 모델을 과도하게 유리하게 만드는 후처리는 하지 않는다.
+    """
+    text = str(text).strip()
+
+    lines = [
+        line.strip()
+        for line in text.splitlines()
+        if line.strip()
+    ]
+
+    if not lines:
+        return ""
+
+    candidate = lines[0]
+
+    candidate = re.sub(
+        r"^(?:final\s+answer|answer)\s*[:\-]\s*",
+        "",
+        candidate,
+        flags=re.IGNORECASE,
+    ).strip()
+
+    # 흔한 마크다운 강조만 제거
+    candidate = candidate.strip("`")
+    candidate = re.sub(r"^\*\*(.*?)\*\*$", r"\1", candidate).strip()
+
+    return candidate
+
+
+# ============================================================
 # ChartQA Accuracy
 # ============================================================
 
@@ -513,7 +572,7 @@ def make_inputs(
                 },
                 {
                     "type": "text",
-                    "text": question,
+                    "text": build_chartqa_prompt(question),
                 },
             ],
         }
@@ -709,13 +768,18 @@ def evaluate_model(
 
         answers = sample["answers"]
 
+        raw_prediction = result["prediction"]
+        scoring_prediction = clean_prediction_for_scoring(
+            raw_prediction
+        )
+
         exact = exact_match_score(
-            result["prediction"],
+            scoring_prediction,
             answers,
         )
 
         relaxed = relaxed_accuracy_score(
-            result["prediction"],
+            scoring_prediction,
             answers,
         )
 
@@ -731,7 +795,9 @@ def evaluate_model(
                 answers,
                 ensure_ascii=False,
             ),
-            "prediction": result["prediction"],
+            "prediction": raw_prediction,
+            "scoring_prediction": scoring_prediction,
+            "prompt_used": build_chartqa_prompt(sample["question"]),
             "exact_match": exact,
             "relaxed_accuracy": relaxed,
             "latency_sec": result["latency_sec"],
@@ -740,7 +806,7 @@ def evaluate_model(
             "tokens_per_sec": result["tokens_per_sec"],
             "peak_vram_gb": result["peak_vram_gb"],
             "word_count": lexical_metrics(
-                result["prediction"]
+                raw_prediction
             ),
             "human_or_machine": sample.get(
                 "human_or_machine",
@@ -794,6 +860,45 @@ def make_summary(df):
         df
         .groupby("test_name")[metrics]
         .mean(numeric_only=True)
+        .round(4)
+    )
+
+
+def make_source_summary(df):
+    """
+    ChartQA의 human_or_machine 기준 성능을 별도로 집계한다.
+    0 = human-written, 1 = machine-generated
+    """
+    temp = df.copy()
+
+    def _source_name(value):
+        try:
+            value = int(value)
+        except (TypeError, ValueError):
+            return "unknown"
+
+        if value == 0:
+            return "human"
+        if value == 1:
+            return "machine"
+        return "unknown"
+
+    temp["question_source"] = (
+        temp["human_or_machine"]
+        .map(_source_name)
+    )
+
+    metrics = [
+        "exact_match",
+        "relaxed_accuracy",
+        "latency_sec",
+        "output_tokens",
+    ]
+
+    return (
+        temp
+        .groupby(["test_name", "question_source"])[metrics]
+        .agg(["mean", "count"])
         .round(4)
     )
 

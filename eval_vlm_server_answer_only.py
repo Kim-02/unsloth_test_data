@@ -17,12 +17,13 @@ from pathlib import Path
 import pandas as pd
 import torch
 
-from vlm_eval_lib_server_eager import (
+from vlm_eval_lib_server_answer_only import (
     resolve_lora_path,
     prune_checkpoints_keep_last,
     load_chartqa_dataset,
     evaluate_model,
     make_summary,
+    make_source_summary,
     build_results_log_rows,
     save_results_log,
     build_model_config_row,
@@ -55,6 +56,9 @@ DATASET_SPLIT = "test"
 EVAL_LIMIT = 30
 EVAL_SEED = 3407
 
+# 이전 평가와 구분하기 위한 태그
+EVAL_TAG = "answer_only_v2"
+
 MAX_SEQ_LENGTH = 2048
 MAX_NEW_TOKENS = 64
 
@@ -64,7 +68,7 @@ MAX_NEW_TOKENS = 64
 EVAL_LOAD_IN_4BIT = False
 
 # 결과 저장 위치
-OUTPUT_DIR = Path("/workspace/results/chartqa_gemma3_12b_lora")
+OUTPUT_DIR = Path("/workspace/results/chartqa_gemma3_12b_lora_answeronly")
 RESULTS_LOG_PATH = Path("/workspace/results/unsloth_fine_tuning_results.csv")
 MODEL_CONFIG_LOG_PATH = Path("/workspace/results/unsloth_fine_tuning_model_config.csv")
 
@@ -196,7 +200,7 @@ def main():
         save_path=OUTPUT_DIR / "base_raw.csv",
         max_seq_length=MAX_SEQ_LENGTH,
         max_new_tokens=MAX_NEW_TOKENS,
-        test_name="BASE",
+        test_name=f"BASE_{EVAL_TAG}",
         load_in_4bit=EVAL_LOAD_IN_4BIT,
     )
 
@@ -204,7 +208,7 @@ def main():
     # FINE-TUNED
     # --------------------------------------------------------
     finetuned_test_name = (
-        f"{FINE_TUNE_METHOD}_{LORA_PROJECT_NAME}_{LORA_SERIAL}"
+        f"{FINE_TUNE_METHOD}_{LORA_PROJECT_NAME}_{LORA_SERIAL}_{EVAL_TAG}"
     )
 
     finetuned_results = evaluate_model(
@@ -232,6 +236,12 @@ def main():
 
     summary.to_csv(
         OUTPUT_DIR / "summary.csv"
+    )
+
+    # Human-written / Machine-generated 질문별 결과
+    source_summary = make_source_summary(df)
+    source_summary.to_csv(
+        OUTPUT_DIR / "summary_by_question_source.csv"
     )
 
     # --------------------------------------------------------
@@ -269,6 +279,9 @@ def main():
 
     print("\n최종 결과")
     print(summary)
+
+    print("\nHuman / Machine 질문 유형별 결과")
+    print(source_summary)
 
     print(
         "\n완료 →",
