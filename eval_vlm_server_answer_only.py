@@ -57,7 +57,7 @@ EVAL_LIMIT = None
 EVAL_SEED = 3407
 
 # 이전 평가와 구분하기 위한 태그
-EVAL_TAG = "answer_only_v2"
+EVAL_TAG = "QLoRA Test"
 
 MAX_SEQ_LENGTH = 2048
 MAX_NEW_TOKENS = 64
@@ -68,7 +68,7 @@ MAX_NEW_TOKENS = 64
 EVAL_LOAD_IN_4BIT = False
 
 # 결과 저장 위치
-OUTPUT_DIR = Path("/workspace/results/chartqa_gemma3_12b_lora_answeronly")
+OUTPUT_DIR = Path("/workspace/results/chartqa_gemma3_12b_qlora_answeronly")
 RESULTS_LOG_PATH = Path("/workspace/results/unsloth_fine_tuning_results.csv")
 MODEL_CONFIG_LOG_PATH = Path("/workspace/results/unsloth_fine_tuning_model_config.csv")
 
