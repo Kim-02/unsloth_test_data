@@ -43,11 +43,11 @@ LORA_SEARCH_DIR = "/root/.unsloth/studio/outputs"
 # 실제 폴더:
 # unsloth_gemma-3-12b-it__project-chartqa-gemma12b-l001_1788936605
 #                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-LORA_PROJECT_NAME = "project-chartqa-gemma12b-l001"
+LORA_PROJECT_NAME = "project-chartqa-gemma12b-ql001"
 
 # 현재 실험의 파인튜닝 방식.
 # QLoRA 실험에서는 "QLoRA"로만 변경.
-FINE_TUNE_METHOD = "LoRA"
+FINE_TUNE_METHOD = "QLoRA"
 
 DATASET_NAME = "HuggingFaceM4/ChartQA"
 DATASET_SPLIT = "test"
